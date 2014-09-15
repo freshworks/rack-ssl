@@ -6,18 +6,11 @@ module Rack
 
     def initialize(app, options = {})
       @app = app
-
-      @hsts = options[:hsts]
-      # @hsts = {} if @hsts.nil? || @hsts == true
-      # @hsts = self.class.default_hsts_options.merge(@hsts) if @hsts
-
-      @exclude = options[:exclude]
-      @host    = options[:host]
     end
 
     def call(env)
       req = Request.new(env)
-      if req.protocol == 'https://'
+      if req.scheme == 'https'
         status, headers, body = @app.call(env)
         # headers = hsts_headers.merge(headers)
         flag_cookies_as_secure!(headers)
@@ -30,21 +23,6 @@ module Rack
     end
 
     private
-
-      # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
-      def hsts_headers
-        if @hsts
-          value = "max-age=#{@hsts[:expires]}"
-          value += "; includeSubDomains" if @hsts[:subdomains]
-          { 'Strict-Transport-Security' => value }
-        else
-          {}
-        end
-      end
-
-      def remove_hsts_headers
-
-      end
 
       def flag_cookies_as_secure!(headers)
         if cookies = headers['Set-Cookie']
