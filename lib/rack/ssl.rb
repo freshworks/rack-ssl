@@ -9,20 +9,33 @@ module Rack
     end
 
     def call(env)
-      req = Request.new(env)
-      if req.scheme == 'https'
+      @request = Request.new(env)
+      if ssl_request?
         status, headers, body = @app.call(env)
         # headers = hsts_headers.merge(headers)
         flag_cookies_as_secure!(headers)
         [status, headers, body]
       else
         status, headers, body = @app.call(env)
-        remove_hsts_headers
         [status, headers, body]
       end
     end
 
     private
+
+      def ssl_request?
+        current_scheme == 'https'
+      end
+
+      def current_scheme
+        if @request.env['HTTPS'] == 'on' || @request.env['HTTP_X_SSL_REQUEST'] == 'on'
+          'https'
+        elsif @request.env['HTTP_X_FORWARDED_PROTO']
+          @request.env['HTTP_X_FORWARDED_PROTO'].split(',')[0]
+        else
+          @request.scheme
+        end
+      end
 
       def flag_cookies_as_secure!(headers)
         if cookies = headers['Set-Cookie']
