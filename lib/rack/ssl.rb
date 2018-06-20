@@ -13,7 +13,7 @@ module Rack
       if ssl_request?
         status, headers, body = @app.call(env)
         # headers = hsts_headers.merge(headers)
-        flag_cookies_as_secure!(headers)
+        flag_cookies_as_secure!(headers) unless RequestStore.store[:skip_secure_cookie]
         [status, headers, body]
       else
         status, headers, body = @app.call(env)
